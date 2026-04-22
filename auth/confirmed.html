@@ -1,0 +1,268 @@
+<!--
+  Prayfully — Auth confirmation landing page.
+
+  WHAT THIS IS:
+    When a user taps "Confirm my email" in the confirmation email, Supabase
+    verifies the token and then redirects the browser to the Site URL
+    configured in Supabase Dashboard → Authentication → URL Configuration.
+
+    That Site URL should point at THIS page, e.g.
+        https://prayfully.app/auth/confirmed
+    (or wherever you host this file).
+
+    Pure deep-links (prayfully://auth/confirmed) don't work from desktop
+    browsers, and some mobile webmail clients also refuse to follow them
+    directly. A real https:// page fixes both cases:
+
+      - On iPhone / Android: we auto-redirect to prayfully://auth/confirmed,
+        which opens the app and lands on the in-app Confirmed screen.
+      - On desktop: we display "Email confirmed — open Prayfully on your
+        phone to sign in." The user's email is already confirmed server-side
+        by the time they got here, so no further action is strictly needed.
+
+  HOW TO DEPLOY:
+    Any static host works — Netlify drop, Vercel, GitHub Pages, Cloudflare
+    Pages, S3 + CloudFront. Upload this single file and point your domain
+    at it. See /web/README.md for step-by-step instructions.
+
+  NO BUILD STEP:
+    Deliberately self-contained — inline CSS, vanilla JS, no frameworks, no
+    external fonts. Loads instantly and is trivial to re-host if you ever
+    switch providers.
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F7F2EA" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Email Confirmed — Prayfully</title>
+
+    <style>
+      /* --- Reset --- */
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+
+      /* --- Page --- */
+      body {
+        min-height: 100vh;
+        min-height: 100dvh;
+        background-color: #F7F2EA;
+        color: #2C241E;
+        font-family: Georgia, "Times New Roman", "Iowan Old Style", serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 20px;
+        line-height: 1.5;
+      }
+
+      /* --- Card --- */
+      .card {
+        width: 100%;
+        max-width: 480px;
+        background-color: #FFFFFF;
+        border-radius: 20px;
+        box-shadow: 0 2px 16px rgba(44, 36, 30, 0.08);
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Top accent bar */
+      .accent-bar {
+        height: 4px;
+        background-color: #B89447;
+      }
+
+      .card-inner {
+        padding: 40px 32px 36px 32px;
+        text-align: center;
+      }
+
+      /* --- Wordmark --- */
+      .wordmark {
+        font-size: 24px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        color: #2C241E;
+      }
+      .tagline {
+        font-style: italic;
+        font-size: 12px;
+        color: #8A7A63;
+        margin-top: 4px;
+        letter-spacing: 0.5px;
+      }
+
+      /* --- Check circle --- */
+      .check-wrap {
+        margin: 28px auto 20px auto;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background-color: rgba(184, 148, 71, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .check-icon {
+        width: 32px;
+        height: 32px;
+        stroke: #B89447;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* --- Headline + copy --- */
+      h1 {
+        margin: 0 0 12px 0;
+        font-size: 26px;
+        font-weight: 500;
+        line-height: 1.25;
+        color: #2C241E;
+      }
+      p.body {
+        margin: 0 0 24px 0;
+        font-size: 16px;
+        color: #4A3F33;
+      }
+      p.subtle {
+        margin: 16px 0 0 0;
+        font-size: 13px;
+        color: #8A7A63;
+        line-height: 1.6;
+      }
+
+      /* --- CTA button --- */
+      .cta {
+        display: inline-block;
+        padding: 14px 36px;
+        background-color: #B89447;
+        color: #FFFFFF;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease, transform 0.05s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .cta:hover { background-color: #A58138; }
+      .cta:active { transform: translateY(1px); }
+
+      /* --- Divider --- */
+      .divider {
+        border-top: 1px solid #EFE7D7;
+        margin: 32px 0 20px 0;
+      }
+
+      /* --- Device-conditional blocks ---
+         Default both hidden; JS flips the correct one on. This avoids a
+         flash of the wrong message before JS runs (rare, but real on slow
+         connections). */
+      .on-mobile, .on-desktop { display: none; }
+      .visible { display: block; }
+
+      /* --- Footer --- */
+      footer {
+        margin-top: 24px;
+        text-align: center;
+        font-size: 11px;
+        color: #9E9081;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+
+      /* Respect reduced-motion preferences */
+      @media (prefers-reduced-motion: reduce) {
+        .cta { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" role="main">
+      <div class="accent-bar" aria-hidden="true"></div>
+      <div class="card-inner">
+        <!-- Wordmark -->
+        <div class="wordmark">Prayfully</div>
+        <div class="tagline">a quiet place to pray</div>
+
+        <!-- Success check -->
+        <div class="check-wrap" aria-hidden="true">
+          <svg class="check-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="5 12 10 17 19 8" />
+          </svg>
+        </div>
+
+        <h1>Your email is confirmed</h1>
+
+        <!-- Mobile-only block: auto-opens app, shows button as fallback -->
+        <div class="on-mobile" id="mobile-block">
+          <p class="body">Taking you back to Prayfully…</p>
+          <a href="#" class="cta" id="open-app-btn" role="button">Open Prayfully</a>
+          <p class="subtle">
+            Nothing happened? Make sure Prayfully is installed,<br />
+            then tap <em>Open Prayfully</em> above.
+          </p>
+        </div>
+
+        <!-- Desktop-only block: informational -->
+        <div class="on-desktop" id="desktop-block">
+          <p class="body">
+            You're all set. Open Prayfully on your phone and sign in to finish getting started.
+          </p>
+          <p class="subtle">
+            No phone handy? You can close this tab — your account is already confirmed on our end.
+          </p>
+        </div>
+
+        <div class="divider"></div>
+        <footer>Prayfully</footer>
+      </div>
+    </main>
+
+    <script>
+      // --- Configuration ------------------------------------------------
+      // Custom URL scheme declared in app.json. Changing this would require
+      // updating the native scheme too.
+      var DEEP_LINK = "prayfully://auth/confirmed";
+
+      // --- Device detection --------------------------------------------
+      // Intentionally permissive: we'd rather show the deep-link UI to a
+      // tablet that *might* have the app than hide it. Worst case on a
+      // wrong-guess mobile: the deep link fails silently, and the user
+      // still sees the "Open Prayfully" button and the confirmation message.
+      var ua = (navigator.userAgent || "").toLowerCase();
+      var isMobile = /iphone|ipad|ipod|android/.test(ua);
+
+      // --- Render the right block --------------------------------------
+      var blockId = isMobile ? "mobile-block" : "desktop-block";
+      var block = document.getElementById(blockId);
+      if (block) block.classList.add("visible");
+
+      if (isMobile) {
+        // Wire the visible fallback button.
+        var btn = document.getElementById("open-app-btn");
+        if (btn) btn.setAttribute("href", DEEP_LINK);
+
+        // Best-effort auto-open. iOS will show an "Open in Prayfully?"
+        // confirmation — that's the OS trust prompt, expected and desired.
+        // Users who decline can still tap the visible button.
+        //
+        // We delay slightly so the "Taking you back…" copy has a chance
+        // to paint before the browser switches tabs.
+        window.setTimeout(function () {
+          window.location.href = DEEP_LINK;
+        }, 400);
+      }
+    </script>
+  </body>
+</html>
